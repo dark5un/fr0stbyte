@@ -1,0 +1,24 @@
+{
+  "name": "fr0stbyte",
+  "version": "0.1.0",
+  "description": "A(n) (other) lightweight web (and not only) framework",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dark5un/fr0stbyte.git"
+  },
+  "keywords": [
+    "fr0stbyte",
+    "frostbyte",
+    "frostbite"
+  ],
+  "author": "Panagiotis Xinos <panagiotis.xinos@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dark5un/fr0stbyte/issues"
+  },
+  "homepage": "https://github.com/dark5un/fr0stbyte"
+}
