@@ -1,12 +1,12 @@
-/*
-*	       Workflow
-*  An event based way to organize
-*  responses.Imported from drywall 
-*/
+  //
+	//        Workflow
+  // An event based way to organize
+  // responses.Imported from drywall
+  //
 
-'use strict';
 
 exports = module.exports = function(req, res) {
+  'use strict';
   var workflow = new (require('events').EventEmitter)();
 
   workflow.outcome = {
