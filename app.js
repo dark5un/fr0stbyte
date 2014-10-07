@@ -7,7 +7,11 @@ var config = require('./config'),
     path = require('path'),
     mongoose = require('mongoose'),
     helmet = require('helmet'),
-    bodyParser = require('body-parser');
+    bodyParser = require('body-parser'),
+    fs = require('fs'),
+    morgan = require('morgan'),
+    sequelize = require('sequelize'),
+    responseTime = require('response-time');
 
 //create express app
 var app = express();
@@ -20,15 +24,16 @@ app.server = http.createServer(app);
 
 app.db = {
   adapters: {
-    mongoose: mongoose
+    mongoose: mongoose,
+    sequelize: sequelize
   }
 };
 
-//setup mongodb
-app.db.mongodb = mongoose.createConnection(config.mongodb.uri);
-app.db.mongodb.on('error', console.error.bind(console, 'nosql connection error: '));
-app.db.mongodb.once('open', function () {
-  console.log("connected to mongodb: ");
+//setup mongoose
+app.db.mongoose = mongoose.createConnection(config.mongoose.uri);
+app.db.mongoose.on('error', console.error.bind(console, 'mongoose connection error: '));
+app.db.mongoose.once('open', function () {
+  console.log("connected to mongoose: ");
 });
 
 //config data models
@@ -41,7 +46,15 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 //middleware
-app.use(require('morgan')('dev'));
+if (app.get('env') === 'development') {
+  app.use(morgan('dev'));
+}
+
+if (app.get('env') === 'production') {
+  var accessLogStream = fs.createWriteStream(path.join(__dirname, 'logs', 'access.log'), {flags: 'a'});
+  app.use(morgan('combined', {stream: accessLogStream}));
+}
+
 app.use(require('compression')());
 app.use(require('serve-static')(path.join(__dirname, 'public')));
 
@@ -52,13 +65,15 @@ app.use(bodyParser.json());
 
 app.use(require('method-override')());
 app.use(helmet());
+app.use(responseTime());
 
 //global locals
 app.locals.projectName = app.config.projectName;
 app.locals.copyrightYear = new Date().getFullYear();
 app.locals.copyrightName = app.config.companyName;
-app.locals.cacheBreaker = 'br34k-01';
 
+//setup routing middleware
+require('./middleware')(app);
 //setup routes
 require('./routes')(app);
 
@@ -69,6 +84,8 @@ app.use(require('./views/http/index').http500);
 app.utility = {};
 app.utility.slugify = require('./util/slugify');
 app.utility.workflow = require('./util/workflow');
+app.utility.json = require('./util/json');
+app.utility.outcome = require('./util/outcome');
 
 //listen up
 app.server.listen(app.config.port, app.config.ipAddress, function(){
