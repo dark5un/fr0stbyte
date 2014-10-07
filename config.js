@@ -3,7 +3,7 @@
 exports.port = process.env.OPENSHIFT_NODEJS_PORT || 3000;
 exports.ipAddress = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 exports.mongoose = {
-  uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'localhost/node'
+  uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'localhost/fr0stbyte'
 };
 
 exports.companyName = '';
@@ -14,7 +14,13 @@ exports.hmac = {
   secret: process.env.SERVER_SECRET || '1234567890',
   check: {
     amount: 2,  // Number
-    type: 'm'   // moment.js manipulation key ["years", "months", "minutes"]
+    type: 'minutes'   // moment.js manipulation key ["years", "months", "minutes"] etc.
+  },
+  encoding: "base64",
+  algorithm: "sha256",
+  validFor: {
+    amount: 1,  // Number
+    type: 'minutes'   // moment.js manipulation key ["years", "months", "minutes"] etc.
   }
 };
 

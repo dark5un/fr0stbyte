@@ -1,11 +1,12 @@
 'use strict';
 
 exports = module.exports = function(app) {
-  var mongoose = app.db.adapters.mongoose;
+  var mongoose = app.db.adapters.mongoose,
+      moment = require('moment');
 
   var secretSchema = new mongoose.Schema({
     secret: { type: String, default: app.config.hmac.secret },
-    createdOn: { type: Date, default: Date.now }
+    createdOn: { type: Date, default: moment().utc().toDate() }
   });
 
   secretSchema.static('latest', function(callback) {

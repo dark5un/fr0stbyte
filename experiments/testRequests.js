@@ -21,6 +21,7 @@ var options = {
   method: "POST",
   headers: {
     "X-API-Authentication-Secret": generateHmac(data, config.hmac.secret),
+    "X-API-Authentication-Id": "frost",
     "Content-Type": "application/json",
     "Date": moment().utc().format()
   },
