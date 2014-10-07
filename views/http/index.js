@@ -1,16 +1,18 @@
 'use strict';
 
-exports.http404 = function(req, res){
+exports.http404 = function(req, res) {
+  console.log(req.app.utility);
   res.status(404);
   if (req.xhr) {
-    res.send({ error: 'Resource not found.' });
+    res.send(req.app.utility.outcome.build(null, false, ['Resource not found.']));
   }
   else {
-    res.render('http/404');
+    res.send(req.app.utility.outcome.build(null, false, ['Resource not found.']));
   }
 };
 
-exports.http500 = function(err, req, res, next){
+exports.http500 = function(err, req, res, next) {
+  console.log(req.app.utility);
   res.status(500);
 
   var data = { err: {} };
@@ -20,9 +22,9 @@ exports.http500 = function(err, req, res, next){
   }
 
   if (req.xhr) {
-    res.send({ error: 'Something went wrong.', details: data });
+    res.send(req.app.utility.outcome.build(null, false, ['Something went wrong.'], data));
   }
   else {
-    res.render('http/500', data);
+    res.send(req.app.utility.outcome.build(null, false, ['Something went wrong.'], data));
   }
 };

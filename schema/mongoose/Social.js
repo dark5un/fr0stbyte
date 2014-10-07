@@ -9,5 +9,5 @@ exports = module.exports = function(app) {
 
   socialSchema.plugin(require('./plugins/pagedFind'));
   socialSchema.set('autoIndex', (app.get('env') === 'development'));
-  app.db.mongodb.model('Social', socialSchema);
+  app.db.mongoose.model('Social', socialSchema);
 };

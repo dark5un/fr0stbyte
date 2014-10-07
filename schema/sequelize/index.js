@@ -4,9 +4,7 @@ exports = module.exports = function(app) {
 
   var fs        = require('fs'),
     path      = require('path'),
-    Sequelize = require('sequelize'),
-    lodash    = require('lodash'),
-    sequelize = app.sequelize,
+    sequelize = app.db.adapters.sequelize,
     db        = {};
 
   fs
@@ -25,9 +23,8 @@ exports = module.exports = function(app) {
     }
   });
 
-  app.rdbms = lodash.extend({
-    sequelize: sequelize,
-    Sequelize: Sequelize
-  }, db);
-
+  app.db.sequelize = {
+    adapter: sequelize,
+    models: db
+  };
 };

@@ -9,5 +9,5 @@ exports = module.exports = function(app) {
 
   userSchema.plugin(require('./plugins/pagedFind'));
   userSchema.set('autoIndex', (app.get('env') === 'development'));
-  app.db.mongodb.model('User', userSchema);
+  app.db.mongoose.model('User', userSchema);
 };

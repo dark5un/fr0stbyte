@@ -1,9 +1,10 @@
 'use strict';
 
 exports = module.exports = function(app) {
-  //embeddable docs first
-  require('./schema/mongodb/User')(app);
+  //mongoose models
+  require('./schema/mongoose/Secret')(app);
+  require('./schema/mongoose/User')(app);
 
   // relational database data
-  require('./schema/rdbms')(app);
+  require('./schema/sequelize')(app);
 };
