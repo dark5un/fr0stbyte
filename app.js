@@ -11,6 +11,7 @@ var config = require('./config'),
     fs = require('fs'),
     morgan = require('morgan'),
     sequelize = require('sequelize'),
+    mongoskin = require('mongoskin'),
     responseTime = require('response-time');
 
 //create express app
@@ -25,7 +26,8 @@ app.server = http.createServer(app);
 app.db = {
   adapters: {
     mongoose: mongoose,
-    sequelize: sequelize
+    sequelize: sequelize,
+    mongoskin: mongoskin
   }
 };
 
@@ -34,6 +36,12 @@ app.db.mongoose = mongoose.createConnection(config.mongoose.uri);
 app.db.mongoose.on('error', console.error.bind(console, 'mongoose connection error: '));
 app.db.mongoose.once('open', function () {
   console.log("connected to mongoose: ");
+});
+app.db.mongoskin = mongoskin.db(config.mongoskin.uri, {safe:true}, function(error, mongoskinDb) {
+  if(error) {
+    console.error.bind(console, 'mongoose connection error: ');
+  }
+  console.log("connected to mongoskin: ");
 });
 
 //config data models
@@ -61,7 +69,7 @@ app.use(require('serve-static')(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({
   extended: true
 }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ type: ["application/json", "application/*+json"]}));
 
 app.use(require('method-override')());
 app.use(helmet());

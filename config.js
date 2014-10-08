@@ -5,6 +5,9 @@ exports.ipAddress = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 exports.mongoose = {
   uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'localhost/fr0stbyte'
 };
+exports.mongoskin = {
+  uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'mongodb://localhost/fr0stbyte'
+};
 
 exports.companyName = '';
 exports.projectName = '';

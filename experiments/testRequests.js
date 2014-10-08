@@ -22,7 +22,7 @@ var options = {
   headers: {
     "X-API-Authentication-Secret": generateHmac(data, config.hmac.secret),
     "X-API-Authentication-Id": "panos",
-    "Content-Type": "application/json",
+    "Content-Type": "application/fr0stbyte.v1+json",
     "Date": moment().utc().format()
   },
   body: data
