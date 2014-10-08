@@ -72,8 +72,12 @@ app.locals.projectName = app.config.projectName;
 app.locals.copyrightYear = new Date().getFullYear();
 app.locals.copyrightName = app.config.companyName;
 
+//setup message queue
+require('./queues')(app);
+
 //setup routing middleware
 require('./middleware')(app);
+
 //setup routes
 require('./routes')(app);
 

@@ -18,10 +18,19 @@ exports.hmac = {
   },
   encoding: "base64",
   algorithm: "sha256",
-  validFor: {
+  validFor: { // additional security for request replay
     amount: 1,  // Number
     type: 'minutes'   // moment.js manipulation key ["years", "months", "minutes"] etc.
   }
+};
+
+exports.queue = {
+  redis: {
+    host: process.env.OPENSHIFT_REDIS_HOST || 'localhost',
+    port: process.env.OPENSHIFT_REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD || null
+  },
+  enabled: true // set to false if you do not need a message queue
 };
 
 exports.smtp = {
