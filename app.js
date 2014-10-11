@@ -37,12 +37,7 @@ app.db.mongoose.on('error', console.error.bind(console, 'mongoose connection err
 app.db.mongoose.once('open', function () {
   console.log("connected to mongoose: ");
 });
-app.db.mongoskin = mongoskin.db(config.mongoskin.uri, {safe:true}, function(error, mongoskinDb) {
-  if(error) {
-    console.error.bind(console, 'mongoose connection error: ');
-  }
-  console.log("connected to mongoskin: ");
-});
+app.db.mongoskin = mongoskin.db(config.mongoskin.uri, {safe:true});
 
 //config data models
 require('./models')(app);

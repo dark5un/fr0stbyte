@@ -1,14 +1,15 @@
 'use strict';
 
-module.exports = exports = function pagedFind(app, model, options, cb) {
-  var modelInstance = app.db.mongoskin.collection(model);
+module.exports = function (app, model, options, cb) {
+  var collection = app.db.mongoskin.collection(model),
+      _ = require('lodash');
 
   if (!options.filters) {
     options.filters = {};
   }
 
   if (!options.keys) {
-    options.keys = '';
+    options.keys = {};
   }
 
   if (!options.limit) {
@@ -41,21 +42,31 @@ module.exports = exports = function pagedFind(app, model, options, cb) {
   };
 
   var countResults = function(callback) {
-    modelInstance.count(options.filters, function(err, count) {
+    app.db.mongoskin.collection(model).count(options.filters, function(err, count) {
       output.items.total = count;
       callback(null, 'done counting');
     });
   };
 
+  var findOptions = {
+    fields: _.reduce(options.keys.split(","), function(result, value) {
+        result[value] = 1;
+        return result;
+      }, {}),
+    skip: (options.page - 1) * options.limit,
+    sort: _.reduce(options.sort.split(","), function(result, value) {
+        result[value.replace(/^-/, "")] = value.match(/^-/) ? -1 : 1;
+        return result;
+      }, {}),
+    limit: options.limit
+  };
+
   var getResults = function(callback) {
-    var query = thisSchema.find(options.filters, options.keys);
-    query.skip((options.page - 1) * options.limit);
-    query.limit(options.limit);
-    query.sort(options.sort);
-    query.exec(function(err, results) {
-      output.data = results;
-      callback(null, 'done getting records');
-    });
+    collection.find(options.filters, findOptions)
+      .toArray(function(err, results) {
+        output.data = results;
+        callback(null, 'done getting records');
+      });
   };
 
   require('async').parallel([

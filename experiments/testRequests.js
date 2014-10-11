@@ -17,15 +17,14 @@ var data = JSON.stringify({
 });
 
 var options = {
-  url: 'http://localhost:3000/',
-  method: "POST",
+  url: 'http://localhost:3000/model/clients?_apiId=frost&keys=_id',
+  method: "GET",
   headers: {
-    "X-API-Authentication-Secret": generateHmac(data, config.hmac.secret),
+    "X-API-Authentication-Secret": generateHmac("panos", config.hmac.secret),
     "X-API-Authentication-Id": "panos",
-    "Content-Type": "application/fr0stbyte.v1+json",
+    "Content-Type": "application/json",
     "Date": moment().utc().format()
-  },
-  body: data
+  }
 };
 
 console.log(options);

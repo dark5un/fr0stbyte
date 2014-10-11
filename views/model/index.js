@@ -1,22 +1,30 @@
 'use strict';
 
 exports.find = function(req, res, next) {
-  var _ require('lodash');
+  var _ = require('lodash'),
+    model = req.params.model ? req.params.model : '_id';
+
 
   req.query.keys = req.query.keys ? req.query.keys : '';
   req.query.limit = req.query.limit ? parseInt(req.query.limit, null) : 20;
   req.query.page = req.query.page ? parseInt(req.query.page, null) : 1;
   req.query.sort = req.query.sort ? req.query.sort : '_id';
 
+  req.query.where = _.reduce(_.pick(req.query, function(value, key) {
+    return key.charAt(0) === "_";
+  }), function(result, value, key) {
+    result[key.replace(/^_/, '')] = value;
+    return result;
+  }, {});
 
   var filters = {};
   if (req.query.where) {
-    filters.where = req.query.where;
+    filters = req.query.where;
   }
-  
-  app.db.mongoskin.plugins.pagedFind({
+
+  req.app.db.mongoskin.plugins.pagedFind(req.app, model, {
     filters: filters,
-    keys: 'pivot name',
+    keys: req.query.keys,
     limit: req.query.limit,
     page: req.query.page,
     sort: req.query.sort
@@ -32,7 +40,7 @@ exports.find = function(req, res, next) {
     }
     else {
       results.filters = req.query;
-      res.render('admin/categories/index', { data: { results: escape(JSON.stringify(results)) } });
+      res.json(results);
     }
   });
 };
