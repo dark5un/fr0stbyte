@@ -2,114 +2,175 @@
 
 exports.find = function(req, res, next) {
   var _ = require('lodash'),
-    model = req.params.model ? req.params.model : '_id';
+    workflow = req.app.utility.workflow(req, res),
+    model = req.params.model ? req.params.model : null;
 
-
-  req.query.keys = req.query.keys ? req.query.keys : '';
-  req.query.limit = req.query.limit ? parseInt(req.query.limit, null) : 20;
-  req.query.page = req.query.page ? parseInt(req.query.page, null) : 1;
-  req.query.sort = req.query.sort ? req.query.sort : '_id';
-
-  req.query.where = _.reduce(_.pick(req.query, function(value, key) {
-    return key.charAt(0) === "_";
-  }), function(result, value, key) {
-    result[key.replace(/^_/, '')] = value;
-    return result;
-  }, {});
-
-  var filters = {};
-  if (req.query.where) {
-    filters = req.query.where;
-  }
-
-  req.app.db.mongoskin.plugins.pagedFind(req.app, model, {
-    filters: filters,
-    keys: req.query.keys,
-    limit: req.query.limit,
-    page: req.query.page,
-    sort: req.query.sort
-  }, function(err, results) {
-    if (err) {
-      return next(err);
-    }
-
-    if (req.xhr) {
-      res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
-      results.filters = req.query;
-      res.send(results);
-    }
-    else {
-      results.filters = req.query;
-      res.json(results);
-    }
-  });
-};
-
-exports.read = function(req, res, next){
-  req.app.db.models.Category.findById(req.params.id).exec(function(err, category) {
-    if (err) {
-      return next(err);
-    }
-
-    if (req.xhr) {
-      res.send(category);
-    }
-    else {
-      res.render('admin/categories/details', { data: { record: escape(JSON.stringify(category)) } });
-    }
-  });
-};
-
-exports.create = function(req, res, next){
-  var workflow = req.app.utility.workflow(req, res);
 
   workflow.on('validate', function() {
-    if (!req.user.roles.admin.isMemberOf('root')) {
-      workflow.outcome.errors.push('You may not create categories.');
-      return workflow.emit('response');
+    if (!model) {
+      return workflow.emit('exception', 'Empty model found.');
     }
 
-    if (!req.body.pivot) {
-      workflow.outcome.errors.push('A pivot is required.');
-      return workflow.emit('response');
-    }
+    req.app.db.mongoskin.collectionNames(function(err, models) {
+      var targetModel = req.app.config.mongodb.name + '.' + model;
 
-    if (!req.body.name) {
-      workflow.outcome.errors.push('A name is required.');
-      return workflow.emit('response');
-    }
-
-    workflow.emit('duplicateCategoryCheck');
-  });
-
-  workflow.on('duplicateCategoryCheck', function() {
-    req.app.db.models.Category.findById(req.app.utility.slugify(req.body.pivot +' '+ req.body.name)).exec(function(err, category) {
-      if (err) {
-        return workflow.emit('exception', err);
+      if (_.contains(_.pluck(models, "name"), targetModel)) {
+        workflow.emit('find');
+      } else {
+        return workflow.emit('exception', 'Unknown model.');
       }
-
-      if (category) {
-        workflow.outcome.errors.push('That category+pivot is already taken.');
-        return workflow.emit('response');
-      }
-
-      workflow.emit('createCategory');
     });
   });
 
-  workflow.on('createCategory', function() {
-    var fieldsToSet = {
-      _id: req.app.utility.slugify(req.body.pivot +' '+ req.body.name),
-      pivot: req.body.pivot,
-      name: req.body.name
-    };
+  workflow.on('find', function() {
+    req.query.keys = req.query.keys ? req.query.keys : '';
+    req.query.limit = req.query.limit ? parseInt(req.query.limit, null) : 20;
+    req.query.page = req.query.page ? parseInt(req.query.page, null) : 1;
+    req.query.sort = req.query.sort ? req.query.sort : '_id';
 
-    req.app.db.models.Category.create(fieldsToSet, function(err, category) {
-      if (err) {
-        return workflow.emit('exception', err);
+    req.query.where = _.reduce(_.pick(req.query, function(value, key) {
+      return key.charAt(0) === "_";
+    }), function(result, value, key) {
+      result[key.replace(/^_/, '')] = value;
+      return result;
+    }, {});
+
+    var filters = {};
+    if (req.query.where) {
+      filters = req.query.where;
+    }
+
+    req.app.db.mongoskin.plugins.pagedFind(req.app, model, {
+      filters: filters,
+      keys: req.query.keys,
+      limit: req.query.limit,
+      page: req.query.page,
+      sort: req.query.sort
+    }, function(error, results) {
+      if (error) {
+        return workflow.emit('exception', error);
       }
 
-      workflow.outcome.record = category;
+      results.filters = req.query;
+      workflow.outcome.record = results;
+
+      return workflow.emit('response');
+    });
+  });
+
+  workflow.emit('validate');
+
+};
+
+exports.read = function(req, res, next) {
+  var _ = require('lodash'),
+    workflow = req.app.utility.workflow(req, res),
+    model = req.params.model ? req.params.model : null,
+    collection = null;
+
+  workflow.on('validate', function() {
+    if (!model) {
+      return workflow.emit('exception', 'Empty model found.');
+    }
+
+    req.app.db.mongoskin.collectionNames(function(err, models) {
+      var targetModel = req.app.config.mongodb.name + '.' + model;
+
+      if (_.contains(_.pluck(models, "name"), targetModel)) {
+        collection = req.app.db.mongoskin.collection(model);
+        workflow.emit('find');
+      } else {
+        return workflow.emit('exception', 'Unknown model.');
+      }
+    });
+  });
+
+  workflow.on('find', function() {
+    req.query.keys = req.query.keys ? req.query.keys : null;
+    req.params.id = req.params.id ? req.params.id : null;
+
+    var findOptions = req.query.keys ? {
+      fields: _.reduce(req.query.keys.split(","), function(result, value) {
+        result[value] = 1;
+        return result;
+      }, {})
+    } : {};
+
+    console.log(collection);
+    collection.findOne({
+      _id: req.params.id
+    }, findOptions, function(error, document) {
+      if (error) {
+        return workflow.emit('exception', error);
+      }
+
+      workflow.outcome.record = document;
+      return workflow.emit('response');
+    });
+
+  });
+
+  workflow.emit('validate');
+};
+
+exports.create = function(req, res, next) {
+  var workflow = req.app.utility.workflow(req, res),
+    _ = require('lodash'),
+    model = req.params.model ? req.params.model : null,
+    collection = null;
+
+  workflow.on('validate', function() {
+    if (!model) {
+      return workflow.emit('exception', 'Empty model found.');
+    }
+
+    if (req.body === {}) {
+      return workflow.emit('exception', 'Empty body found.');
+    }
+
+    if (!req.body.record) {
+      return workflow.emit('exception', 'No record found');
+    }
+    workflow.emit('duplicateDataCheck');
+  });
+
+  workflow.on('duplicateDataCheck', function() {
+    collection = req.app.db.mongoskin.collection(model);
+
+    req.query.where = _.reduce(_.pick(req.query, function(value, key) {
+      return key.charAt(0) === "_";
+    }), function(result, value, key) {
+      result[key.replace(/^_/, '')] = value;
+      return result;
+    }, {});
+
+    req.query.keys = req.query.keys ? req.query.keys : null;
+
+    console.log({where: req.query.where});
+    if (req.query.where !== {}) {
+      collection.findOne(req.query.where, function(error, record) {
+        if (error) {
+          return workflow.emit('exception', error);
+        }
+        if (record) {
+          return workflow.emit('exception', 'Duplicate record found');
+        } else {
+          workflow.emit('create');
+        }
+      });
+    } else {
+      workflow.emit('create');
+    }
+  });
+
+  workflow.on('create', function() {
+    var fieldsToSet = req.body.record;
+
+    collection.insert(fieldsToSet, function(error, result) {
+      if (error) {
+        return workflow.emit('exception', error);
+      }
+      workflow.outcome.record = result;
       return workflow.emit('response');
     });
   });
@@ -117,40 +178,64 @@ exports.create = function(req, res, next){
   workflow.emit('validate');
 };
 
-exports.update = function(req, res, next){
-  var workflow = req.app.utility.workflow(req, res);
+exports.update = function(req, res, next) {
+  var workflow = req.app.utility.workflow(req, res),
+    _ = require('lodash'),
+    model = req.params.model ? req.params.model : null,
+    collection = null;
+
+  req.params.id = req.params.id ? req.params.id : null;
 
   workflow.on('validate', function() {
-    if (!req.user.roles.admin.isMemberOf('root')) {
-      workflow.outcome.errors.push('You may not update categories.');
+    if (!model) {
+      workflow.outcome.errors.push('Empty model found.');
       return workflow.emit('response');
     }
 
-    if (!req.body.pivot) {
-      workflow.outcome.errfor.pivot = 'pivot';
-      return workflow.emit('response');
+    if (req.body === {}) {
+      return workflow.emit('exception', 'Empty body found.');
     }
 
-    if (!req.body.name) {
-      workflow.outcome.errfor.name = 'required';
-      return workflow.emit('response');
+    if (!req.body.record) {
+      return workflow.emit('exception', 'No record found');
     }
 
-    workflow.emit('patchCategory');
+    req.app.db.mongoskin.collectionNames(function(err, models) {
+      var targetModel = req.app.config.mongodb.name + '.' + model;
+
+      if (_.contains(_.pluck(models, "name"), targetModel)) {
+        collection = req.app.db.mongoskin.collection(model);
+        workflow.emit('checkIfExists');
+      } else {
+        return workflow.emit('exception', 'Unknown model.');
+      }
+    });
   });
 
-  workflow.on('patchCategory', function() {
-    var fieldsToSet = {
-      pivot: req.body.pivot,
-      name: req.body.name
-    };
-
-    req.app.db.models.Category.findByIdAndUpdate(req.params.id, fieldsToSet, function(err, category) {
-      if (err) {
-        return workflow.emit('exception', err);
+  workflow.on('checkIfExists', function() {
+    collection.findOne({
+      _id: req.params.id
+    }, function(error, record) {
+      if (error) {
+        return workflow.emit('exception', error);
       }
+      if (!record) {
+        return workflow.emit('exception', 'Record not found');
+      }
+      workflow.emit('update');
+    });
+  });
 
-      workflow.outcome.category = category;
+  workflow.on('update', function(record) {
+    var fieldsToSet = req.body.record;
+
+    collection.update({
+      _id: req.params.id
+    }, fieldsToSet, function(error, result) {
+      if (error) {
+        return workflow.emit('exception', error);
+      }
+      workflow.outcome.record = result;
       return workflow.emit('response');
     });
   });
@@ -158,25 +243,44 @@ exports.update = function(req, res, next){
   workflow.emit('validate');
 };
 
-exports.delete = function(req, res, next){
-  var workflow = req.app.utility.workflow(req, res);
+exports.delete = function(req, res, next) {
+  var _ = require('lodash'),
+    workflow = req.app.utility.workflow(req, res),
+    model = req.params.model ? req.params.model : null,
+    collection = null;
 
   workflow.on('validate', function() {
-    if (!req.user.roles.admin.isMemberOf('root')) {
-      workflow.outcome.errors.push('You may not delete categories.');
-      return workflow.emit('response');
+    if (!model) {
+      return workflow.emit('exception', 'Empty model found.');
     }
 
-    workflow.emit('deleteCategory');
+    req.app.db.mongoskin.collectionNames(function(err, models) {
+      var targetModel = req.app.config.mongodb.name + '.' + model;
+
+      if (_.contains(_.pluck(models, "name"), targetModel)) {
+        collection = req.app.db.mongoskin.collection(model);
+        workflow.emit('delete');
+      } else {
+        return workflow.emit('exception', 'Unknown model.');
+      }
+    });
   });
 
-  workflow.on('deleteCategory', function(err) {
-    req.app.db.models.Category.findByIdAndRemove(req.params.id, function(err, category) {
-      if (err) {
-        return workflow.emit('exception', err);
+  workflow.on('delete', function() {
+    req.query.keys = req.query.keys ? req.query.keys : '';
+    req.params.id = req.params.id ? req.params.id : null;
+
+    collection.remove({
+      _id: req.params.id
+    }, function(error, count) {
+      if (error) {
+        return workflow.emit('exception', error);
       }
-      workflow.emit('response');
+
+      workflow.outcome.record = {count: count};
+      return workflow.emit('response');
     });
+
   });
 
   workflow.emit('validate');

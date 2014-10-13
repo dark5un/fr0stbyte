@@ -2,11 +2,17 @@
 
 exports.port = process.env.OPENSHIFT_NODEJS_PORT || 3000;
 exports.ipAddress = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+
+var mongodb = {
+  name: 'fr0stbyte'
+};
+exports.mongodb = mongodb;
+
 exports.mongoose = {
-  uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'localhost/fr0stbyte'
+  uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'localhost/' + mongodb.name
 };
 exports.mongoskin = {
-  uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'mongodb://localhost/fr0stbyte'
+  uri: process.env.OPENSHIFT_MONGODB_DB_URL + process.env.OPENSHIFT_APP_NAME || 'mongodb://localhost/' + mongodb.name
 };
 
 exports.companyName = '';

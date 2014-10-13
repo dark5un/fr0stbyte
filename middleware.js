@@ -101,7 +101,6 @@ exports = module.exports = function(app) {
             req.hmac.key = reqKey;
             return next();
           }
-
           res.status(404).json(app.utility.outcome.build());
         }
       });

@@ -19,14 +19,18 @@ exports = module.exports = function(req, res) {
     return Object.keys(workflow.outcome.errfor).length !== 0 || workflow.outcome.errors.length !== 0;
   };
 
-  workflow.on('exception', function(err) {
-    workflow.outcome.errors.push('Exception: '+ err);
+  workflow.on('exception', function(error) {
+    workflow.outcome.errors.push('Exception: '+ error);
     return workflow.emit('response');
   });
 
   workflow.on('response', function() {
     workflow.outcome.success = !workflow.hasErrors();
-    res.json(workflow.outcome);
+    if (req.xhr) {
+      res.json(workflow.outcome);
+    } else {
+      res.send(workflow.outcome);
+    }
   });
 
   return workflow;

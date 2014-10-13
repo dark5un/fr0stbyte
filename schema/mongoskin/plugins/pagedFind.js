@@ -49,15 +49,15 @@ module.exports = function (app, model, options, cb) {
   };
 
   var findOptions = {
-    fields: _.reduce(options.keys.split(","), function(result, value) {
+    fields: options.keys ? _.reduce(options.keys.split(","), function(result, value) {
         result[value] = 1;
         return result;
-      }, {}),
+      }, {}) : {},
     skip: (options.page - 1) * options.limit,
-    sort: _.reduce(options.sort.split(","), function(result, value) {
+    sort: options.sort ? _.reduce(options.sort.split(","), function(result, value) {
         result[value.replace(/^-/, "")] = value.match(/^-/) ? -1 : 1;
         return result;
-      }, {}),
+      }, {}) : {},
     limit: options.limit
   };
 
