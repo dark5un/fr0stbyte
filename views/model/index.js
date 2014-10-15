@@ -5,7 +5,6 @@ exports.find = function(req, res, next) {
     workflow = req.app.utility.workflow(req, res),
     model = req.params.model ? req.params.model : null;
 
-
   workflow.on('validate', function() {
     if (!model) {
       return workflow.emit('exception', 'Empty model found.');
@@ -146,7 +145,9 @@ exports.create = function(req, res, next) {
 
     req.query.keys = req.query.keys ? req.query.keys : null;
 
-    console.log({where: req.query.where});
+    console.log({
+      where: req.query.where
+    });
     if (req.query.where !== {}) {
       collection.findOne(req.query.where, function(error, record) {
         if (error) {
@@ -277,7 +278,9 @@ exports.delete = function(req, res, next) {
         return workflow.emit('exception', error);
       }
 
-      workflow.outcome.record = {count: count};
+      workflow.outcome.record = {
+        count: count
+      };
       return workflow.emit('response');
     });
 
