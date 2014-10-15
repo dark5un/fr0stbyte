@@ -23,6 +23,7 @@ exports = module.exports = function(app) {
       };
       return next();
     } else {
+      console.log("1");
       res.status(404).json(app.utility.outcome.build());
     }
   });
@@ -59,6 +60,7 @@ exports = module.exports = function(app) {
           }
         });
     } else {
+      console.log("2");
       res.status(404).json(app.utility.outcome.build());
     }
   });
@@ -93,13 +95,12 @@ exports = module.exports = function(app) {
         } else {
           var body = app.utility.json.isJSON(req.body) ? JSON.stringify(req.body) : "",
             reqKey = req.get("X-API-Authentication-Secret"),
-            calcKey = generateHmac(body, secret);
+            calcKey = body !== "{}" ? generateHmac(body, secret) : generateHmac(req.hmac.id, secret);
 
           if (reqKey === calcKey) {
             req.hmac.key = reqKey;
             return next();
           }
-
           res.status(404).json(app.utility.outcome.build());
         }
       });
