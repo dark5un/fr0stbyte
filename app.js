@@ -12,7 +12,9 @@ var config = require('./config'),
     morgan = require('morgan'),
     sequelize = require('sequelize'),
     mongoskin = require('mongoskin'),
-    responseTime = require('response-time');
+    responseTime = require('response-time'),
+    gcm = require('node-gcm'),
+    apn = require('apn');
 
 //create express app
 var app = express();
@@ -22,6 +24,14 @@ app.config = config;
 
 //setup the web server
 app.server = http.createServer(app);
+
+//setup utilities
+app.utility = {};
+app.utility.slugify = require('./util/slugify');
+app.utility.workflow = require('./util/workflow');
+app.utility.json = require('./util/json');
+app.utility.outcome = require('./util/outcome');
+app.utility.hmac = require('./util/hmac');
 
 app.db = {
   adapters: {
@@ -34,10 +44,15 @@ app.db = {
 //setup mongoose
 app.db.mongoose = mongoose.createConnection(config.mongoose.uri);
 app.db.mongoose.on('error', console.error.bind(console, 'mongoose connection error: '));
-app.db.mongoose.once('open', function () {
-  console.log("connected to mongoose: ");
-});
 app.db.mongoskin = mongoskin.db(config.mongoskin.uri, {safe:true});
+
+//setup notification service
+app.notifications = {
+  transport: {
+    apn: apn,
+    gcm: gcm
+  }
+};
 
 //config data models
 require('./models')(app);
@@ -87,14 +102,9 @@ require('./routes')(app);
 //custom (friendly) error handler
 app.use(require('./views/http/index').http500);
 
-//setup utilities
-app.utility = {};
-app.utility.slugify = require('./util/slugify');
-app.utility.workflow = require('./util/workflow');
-app.utility.json = require('./util/json');
-app.utility.outcome = require('./util/outcome');
-
 //listen up
 app.server.listen(app.config.port, app.config.ipAddress, function(){
   //and... we're live
 });
+
+module.exports = app;
