@@ -14,15 +14,19 @@ describe('hmac authentication', function() {
     },
     secret = app.config.hmac.secret,
     algorithm = app.config.hmac.algorithm,
-    encoding = app.config.hmac.encoding;
+    encoding = app.config.hmac.encoding,
+    hmacSecret = generateHmac(JSON.stringify(body), secret, algorithm, encoding),
+    headers = {
+      "Accept": "application/json",
+      "Date": new Date().toString(),
+      "X-API-Authentication-Id": "test-client",
+      "X-API-Authentication-Secret": hmacSecret
+    };
 
   it('should return the data record validated', function(done) {
     request(app)
       .post('/')
-      .set('Accept', 'application/json')
-      .set('Date', new Date().toString())
-      .set('X-API-Authentication-Id', 'test-client')
-      .set('X-API-Authentication-Secret', generateHmac(JSON.stringify(body), secret, algorithm, encoding))
+      .set(headers)
       .expect(200)
       .send(body)
       .end(function(err, res) {
