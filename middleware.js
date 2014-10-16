@@ -1,15 +1,9 @@
 'use strict';
 exports = module.exports = function(app) {
 
-  var crypto = require('crypto'),
-    async = require('async'),
-    moment = require('moment');
-
-  function generateHmac(data, secretKey, algorithm, encoding) {
-    encoding = encoding || app.config.hmac.encoding;
-    algorithm = algorithm || app.config.hmac.algorithm;
-    return crypto.createHmac(algorithm, secretKey).update(data).digest(encoding);
-  }
+  var async = require('async'),
+    moment = require('moment'),
+    generateHmac = app.utility.hmac.generateHmac;
 
   // RFC 2104 authentication
 
@@ -17,7 +11,7 @@ exports = module.exports = function(app) {
   app.use(function(req, res, next) {
     var reqDate = req.get("Date");
     if (moment().add(app.config.hmac.validFor.amount, app.config.hmac.validFor.type)
-      .utc().isAfter(moment(reqDate))) {
+      .utc().isAfter(moment(new Date(reqDate)))) {
       req.hmac = {
         date: reqDate
       };
@@ -95,7 +89,11 @@ exports = module.exports = function(app) {
         } else {
           var body = app.utility.json.isJSON(req.body) ? JSON.stringify(req.body) : "",
             reqKey = req.get("X-API-Authentication-Secret"),
-            calcKey = body !== "{}" ? generateHmac(body, secret) : generateHmac(req.hmac.id, secret);
+            algorithm = app.config.hmac.algorithm,
+            encoding = app.config.hmac.encoding,
+            calcKey = (body !== "{}") ?
+            generateHmac(body, secret, algorithm, encoding) :
+            generateHmac(req.hmac.id, secret, algorithm, encoding);
 
           if (reqKey === calcKey) {
             req.hmac.key = reqKey;

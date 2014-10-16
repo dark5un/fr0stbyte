@@ -19,6 +19,14 @@ exports.companyName = '';
 exports.projectName = '';
 exports.systemEmail = '';
 
+exports.apn = {
+  key: process.env.APN_KEY || null
+};
+
+exports.gcm = {
+  key: process.env.GCM_KEY || null
+};
+
 exports.hmac = {
   secret: process.env.SERVER_SECRET || '1234567890',
   check: {

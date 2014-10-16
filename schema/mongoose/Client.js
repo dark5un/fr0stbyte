@@ -6,7 +6,9 @@ exports = module.exports = function(app) {
 
   var clientSchema = new mongoose.Schema({
     apiId: { type: String, default: null },
-    updatedOn: { type: Date, default: moment().utc().toDate() }
+    updatedOn: { type: Date, default: moment().utc().toDate() },
+    apn: { type: String, default: null },
+    gcm: { type: String, default: null }
   });
 
   clientSchema.plugin(require('./plugins/pagedFind'));
